@@ -32,7 +32,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from tasks.models import Annotation, Prediction, Task
+from tasks.models import Annotation, Prediction, Task, DataFileCacheModel
 
 logger = logging.getLogger(__name__)
 
@@ -324,7 +324,7 @@ class TaskListAPI(generics.ListCreateAPIView):
             all_fields = None
         if page is not None:
             ids = [task.id for task in page]  # page is a list already
-            data_print=self.prefetch(
+            data_print = self.prefetch(
                 Task.prepared.annotate_queryset(
                     Task.objects.filter(id__in=ids),
                     fields_for_evaluation=fields_for_evaluation,
@@ -371,8 +371,8 @@ class TaskListAPI(generics.ListCreateAPIView):
         x_fern_audiences=['internal'],
         operation_summary='Get data manager columns',
         operation_description=(
-            'Retrieve the data manager columns available for the tasks in a specific project. '
-            'For more details, see [GET api/actions](#/Data%20Manager/get_api_actions).'
+                'Retrieve the data manager columns available for the tasks in a specific project. '
+                'For more details, see [GET api/actions](#/Data%20Manager/get_api_actions).'
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -482,10 +482,10 @@ class ProjectStateAPI(APIView):
         x_fern_audiences=['public'],
         operation_summary='Post actions',
         operation_description=(
-            'Perform a Data Manager action with the selected tasks and filters. '
-            'Note: More complex actions require additional parameters in the request body. '
-            'Call `GET api/actions?project=<id>` to explore them. <br>'
-            'Example: `GET api/actions?id=delete_tasks&project=1`'
+                'Perform a Data Manager action with the selected tasks and filters. '
+                'Note: More complex actions require additional parameters in the request body. '
+                'Call `GET api/actions?project=<id>` to explore them. <br>'
+                'Example: `GET api/actions?id=delete_tasks&project=1`'
         ),
         request_body=prepare_params_schema,
         manual_parameters=[
@@ -521,7 +521,7 @@ class ProjectStateAPI(APIView):
                 type=openapi.TYPE_INTEGER,
                 in_=openapi.IN_QUERY,
                 description='View ID (optional, it has higher priority than filters, '
-                'selectedItems and ordering from the request body payload)',
+                            'selectedItems and ordering from the request body payload)',
             ),
         ],
         responses={200: openapi.Response(description='Action performed successfully')},
@@ -552,9 +552,32 @@ class ProjectActionsAPI(APIView):
             response = {'detail': 'No action id "' + str(action_id) + '", use ?id=<action-id>'}
             return Response(response, status=422)
 
+        # 构建缓存数据进行删除
+        for query in queryset:
+            insert_task_file(query.data, query.id)
+
+
         # perform action and return the result dict
         kwargs = {'request': request}  # pass advanced params to actions
         result = perform_action(action_id, project, queryset, request.user, **kwargs)
         code = result.pop('response_code', 200)
 
         return Response(result, status=code)
+
+
+def normalize_path(path):
+    # 替换所有反斜杠为正斜杠
+    unified_path = path.replace('\\', '/')
+    # 合并连续的斜杠（处理可能的重复）
+    unified_path = '/'.join(filter(None, unified_path.split('/')))
+    return unified_path
+
+
+def insert_task_file(file_dict: dict, task_id: int):
+    key = None
+    for key in file_dict:
+        key = key
+    file_path = settings.MEDIA_ROOT + str(file_dict.get(key)).replace("/data", "")
+
+    normalized = normalize_path(file_path)
+    DataFileCacheModel.objects.create(path=normalized, task_id=task_id)

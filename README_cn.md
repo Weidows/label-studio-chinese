@@ -12,10 +12,21 @@
 # labelstudio-chinese
 更适合中国宝宝的labelstudio标注平台
 
-# 更新内容
-1.进行了内容汉化
 
+# 更新内容
+
+1.部分内容汉化
+
+2.添加data文件数据表 
+当删除标注任务的时候本地文件没有被删除掉，则添加了数据表进行标记可以删除的文件使用脚本进行删除或者做管理后台可视化操作
+
+3.本地运行前端不能打包问题（node在18.20.8版本运行或者20版本运行 否则npx报错）或者手动把npx的文件复制到web目录底下
+
+# 更新内容
+
+1.进行了内容汉化
 2.修改了用户数据隔离
+
 
 # 项目启动
 ### 本地运行 
@@ -33,11 +44,11 @@ python label_studio/manage.py collectstatic
 python label_studio/manage.py runserver
 ```
 
-#### 前端开发模式 （可选）
-```bash
+#### 前端开发模式 （可选） node 版本在18.20.8版本运行或者20版本运行否则npx报错
+```bash 
 # 安装所有包依赖项
 cd web 
-yarn install --frozen-lockfile;
+yarn install --frozen-lockfile
 # 主程序页面启动命令
 yarn ls:watch
 # 项目数据管理页面启动命令

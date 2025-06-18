@@ -60,8 +60,8 @@ class Task(TaskMixin, models.Model):
         'data',
         null=False,
         help_text='User imported or uploaded data for a task. Data is formatted according to '
-        'the project label config. You can find examples of data for your project '
-        'on the Import page in the Label Studio Data Manager UI.',
+                  'the project label config. You can find examples of data for your project '
+                  'on the Import page in the Label Studio Data Manager UI.',
     )
 
     meta = JSONField(
@@ -69,8 +69,8 @@ class Task(TaskMixin, models.Model):
         null=True,
         default=dict,
         help_text='Meta is user imported (uploaded) data and can be useful as input for an ML '
-        'Backend for embeddings, advanced vectors, and other info. It is passed to '
-        'ML during training/predicting steps.',
+                  'Backend for embeddings, advanced vectors, and other info. It is passed to '
+                  'ML during training/predicting steps.',
     )
     project = models.ForeignKey(
         'projects.Project',
@@ -93,7 +93,7 @@ class Task(TaskMixin, models.Model):
         _('is_labeled'),
         default=False,
         help_text='True if the number of annotations for this task is greater than or equal '
-        'to the number of maximum_completions for the project',
+                  'to the number of maximum_completions for the project',
     )
     overlap = models.IntegerField(
         _('overlap'),
@@ -277,7 +277,7 @@ class Task(TaskMixin, models.Model):
         from projects.functions.next_task import get_next_task_logging_level
 
         if self.project.show_ground_truth_first and flag_set(
-            'fflag_feat_all_leap_1825_annotator_evaluation_short', user='auto'
+                'fflag_feat_all_leap_1825_annotator_evaluation_short', user='auto'
         ):
             # in show_ground_truth_first mode(onboarding)
             # we ignore overlap setting for ground_truth tasks
@@ -324,9 +324,9 @@ class Task(TaskMixin, models.Model):
         # regardless of the max_additional_annotators_assignable setting. This ensures recalculating agreement after
         # each annotation and prevents concurrent annotations from dropping the agreement below the threshold.
         if (
-            hasattr(self.project, 'lse_project')
-            and self.project.lse_project
-            and self.project.lse_project.agreement_threshold is not None
+                hasattr(self.project, 'lse_project')
+                and self.project.lse_project
+                and self.project.lse_project.agreement_threshold is not None
         ):
             try:
                 from stats.models import get_task_agreement
@@ -367,8 +367,8 @@ class Task(TaskMixin, models.Model):
         if num_locks < self.overlap:
             lock_ttl = settings.TASK_LOCK_TTL
             if (
-                flag_set('fflag_feat_all_leap_1534_custom_task_lock_timeout_short', user=user)
-                and self.project.custom_task_lock_ttl
+                    flag_set('fflag_feat_all_leap_1534_custom_task_lock_timeout_short', user=user)
+                    and self.project.custom_task_lock_ttl
             ):
                 lock_ttl = self.project.custom_task_lock_ttl
             expire_at = now() + datetime.timedelta(seconds=lock_ttl)
@@ -441,9 +441,9 @@ class Task(TaskMixin, models.Model):
             for key, value in task_data.items():
                 if isinstance(value, str) and string_is_url(value):
                     path = (
-                        reverse('projects-file-proxy', kwargs={'pk': project.pk})
-                        + '?url='
-                        + base64.urlsafe_b64encode(value.encode()).decode()
+                            reverse('projects-file-proxy', kwargs={'pk': project.pk})
+                            + '?url='
+                            + base64.urlsafe_b64encode(value.encode()).decode()
                     )
                     value = urljoin(settings.HOSTNAME, path)
                 protected_data[key] = value
@@ -560,8 +560,8 @@ class Task(TaskMixin, models.Model):
         return result
 
 
-pre_bulk_create = Signal()   # providing args 'objs' and 'batch_size'
-post_bulk_create = Signal()   # providing args 'objs' and 'batch_size'
+pre_bulk_create = Signal()  # providing args 'objs' and 'batch_size'
+post_bulk_create = Signal()  # providing args 'objs' and 'batch_size'
 
 
 class AnnotationManager(models.Manager):
@@ -1023,7 +1023,7 @@ class Prediction(models.Model):
 
     @classmethod
     def create_no_commit(
-        cls, project, label_interface, task_id, data, model_version, model_run
+            cls, project, label_interface, task_id, data, model_version, model_run
     ) -> Optional['Prediction']:
         """
         Creates a Prediction object from the given result data, without committing it to the database.
@@ -1206,8 +1206,8 @@ class PredictionMeta(models.Model):
             CheckConstraint(
                 # either prediction or failed_prediction should be not null
                 check=(
-                    (Q(prediction__isnull=False) & Q(failed_prediction__isnull=True))
-                    | (Q(prediction__isnull=True) & Q(failed_prediction__isnull=False))
+                        (Q(prediction__isnull=False) & Q(failed_prediction__isnull=True))
+                        | (Q(prediction__isnull=True) & Q(failed_prediction__isnull=False))
                 ),
                 name='prediction_or_failed_prediction_not_null',
             )
@@ -1434,3 +1434,13 @@ def bulk_update_stats_project_tasks(tasks, project=None):
 
 Q_finished_annotations = Q(was_cancelled=False) & Q(result__isnull=False)
 Q_task_finished_annotations = Q(annotations__was_cancelled=False) & Q(annotations__result__isnull=False)
+
+
+class DataFileCacheModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    path = models.CharField(max_length=255)
+    task_id = models.IntegerField()
+    create_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'data_file_cache'  # 指定数据库表名
